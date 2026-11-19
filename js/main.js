@@ -29,6 +29,9 @@
   var sizeHs = function () {
     pinned = innerWidth > 960 && !reduce;
     hs.classList.toggle('is-native', !pinned);
+    var intro = $('.hs__intro', hs), pin = $('.hs__pin', hs);
+    if (!pinned && intro.parentNode === track) hs.insertBefore(intro, pin);
+    if (pinned && intro.parentNode !== track) track.insertBefore(intro, track.firstChild);
     if (pinned) { track.style.transform = ''; over = Math.max(0, track.scrollWidth - innerWidth); hs.style.height = (innerHeight + over) + 'px'; }
     else { hs.style.height = ''; track.style.transform = ''; }
     onScroll();
@@ -105,12 +108,84 @@
     $('#lbPrev').addEventListener('click', function () { show(i - 1); });
     $('#lbNext').addEventListener('click', function () { show(i + 1); });
     lb.addEventListener('click', function (e) { if (e.target === lb) close(); });
+    var sx = null;
+    lb.addEventListener('touchstart', function (e) { sx = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+    lb.addEventListener('touchend', function (e) {
+      if (sx === null) return; var dx = e.changedTouches[0].clientX - sx; sx = null;
+      if (Math.abs(dx) > 48) show(dx < 0 ? i + 1 : i - 1);
+    }, { passive: true });
     document.addEventListener('keydown', function (e) {
       if (lb.hidden) return;
       if (e.key === 'Escape') close();
       if (e.key === 'ArrowLeft') show(i - 1);
       if (e.key === 'ArrowRight') show(i + 1);
     });
+  })();
+
+  /* 手機滑卡：頁碼、圈點、與外部標籤同步 */
+  var carousel = function (scroller, slides, pager, onChange) {
+    var idx = -1, dots = [], count, raf = 0;
+    if (pager) {
+      pager.innerHTML = '<p class="pager__count"><b>1</b> / ' + slides.length + '</p><div class="pager__dots"></div><p class="pager__hint">左右滑動</p>';
+      count = $('b', pager);
+      slides.forEach(function (_, k) {
+        var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', '第 ' + (k + 1) + ' 項');
+        b.addEventListener('click', function () { go(k); });
+        $('.pager__dots', pager).appendChild(b); dots.push(b);
+      });
+    }
+    var left = function (el) { return el.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft; };
+    var go = function (k) { scroller.scrollTo({ left: left(slides[k]) - left(slides[0]), behavior: reduce ? 'auto' : 'smooth' }); };
+    var update = function () {
+      raf = 0;
+      var best = 0, bd = 1e9, b0 = left(slides[0]);
+      slides.forEach(function (sl, k) { var d = Math.abs(left(sl) - b0 - scroller.scrollLeft); if (d < bd) { bd = d; best = k; } });
+      if (best === idx) return; idx = best;
+      dots.forEach(function (d, k) { d.classList.toggle('is-on', k === idx); });
+      if (count) count.textContent = idx + 1;
+      if (pager) pager.classList.toggle('is-moved', idx > 0);
+      if (onChange) onChange(idx);
+    };
+    scroller.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+    update();
+    return { go: go, update: update };
+  };
+
+  // 金湯
+  carousel(track, $$('.broth', track), $('#hsPager'));
+
+  // 海陸套餐（手機版）：標籤 + 左右滑動
+  (function () {
+    var tabsEl = $('#setTabs'), trackEl = $('#setTrack'); if (!tabsEl || !trackEl) return;
+    var keys = Object.keys(SETS), tabs = [], slides = [];
+    keys.forEach(function (k, n) {
+      var d = SETS[k];
+      var t = document.createElement('button'); t.type = 'button'; t.setAttribute('role', 'tab'); t.textContent = d.name.replace('套餐', '');
+      t.addEventListener('click', function () { c.go(n); });
+      tabsEl.appendChild(t); tabs.push(t);
+      var a = document.createElement('article'); a.className = 'slide';
+      a.innerHTML = '<figure><img src="' + d.img + '" alt="' + d.name + '" width="876" height="786"></figure>' +
+        '<h3>' + d.name + '</h3><p>' + d.desc + '</p>' +
+        '<dl class="prices"><div><dt>兩人</dt><dd>' + d.p[0] + '</dd></div><div><dt>三人</dt><dd>' + d.p[1] + '</dd></div><div><dt>四人</dt><dd>' + d.p[2] + '</dd></div></dl>';
+      trackEl.appendChild(a); slides.push(a);
+    });
+    var c = carousel(trackEl, slides, $('#setPager'), function (i) {
+      tabs.forEach(function (t, k) { t.classList.toggle('is-on', k === i); t.setAttribute('aria-selected', k === i); });
+      var t = tabs[i];
+      tabsEl.scrollTo({ left: t.offsetLeft - (tabsEl.clientWidth - t.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' });
+    });
+    window.addEventListener('resize', c.update);
+  })();
+
+  /* 手機選單 */
+  (function () {
+    var sheet = $('#sheet'), btn = $('#sheetBtn'); if (!sheet || !btn) return;
+    var set = function (open) { sheet.classList.toggle('is-open', open); sheet.setAttribute('aria-hidden', !open); btn.setAttribute('aria-expanded', open); body.classList.toggle('no-scroll', open); };
+    btn.addEventListener('click', function () { set(!sheet.classList.contains('is-open')); });
+    $('#sheetClose').addEventListener('click', function () { set(false); });
+    sheet.addEventListener('click', function (e) { if (e.target === sheet) set(false); });
+    $$('a', sheet).forEach(function (a) { a.addEventListener('click', function () { set(false); }); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('is-open')) set(false); });
   })();
 
   /* 主視覺：流動的金湯 */

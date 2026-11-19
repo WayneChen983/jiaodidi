@@ -115,6 +115,7 @@
       </article>
 
     </div>
+    <div class="pager" id="hsPager"></div>
     <div class="hs__bar" aria-hidden="true"><i id="hsBar"></i></div>
   </div>
 </section>
@@ -166,6 +167,12 @@
         </div>
       </div>
       <figure class="sets__fig"><img id="setImg" src="img/set_shrimp.jpg" alt="蝦蝦海陸套餐" width="876" height="786"></figure>
+    </div>
+
+    <div class="swipe" id="setSwipe">
+      <div class="swipe__tabs" id="setTabs" role="tablist" aria-label="海陸套餐"></div>
+      <div class="swipe__track" id="setTrack"></div>
+      <div class="pager" id="setPager"></div>
     </div>
 
     <div class="incl">
@@ -343,7 +350,21 @@
   </div>
 </footer>
 
-<div class="dock" id="dock"><a href="tel:+886227781616">電話</a><a class="js-book is-main" href="#" target="_blank" rel="noopener">線上訂位</a><a href="#reserve">地圖</a></div>
+<div class="dock" id="dock"><a href="tel:+886227781616">電話</a><a class="js-book is-main" href="#" target="_blank" rel="noopener">線上訂位</a><button type="button" id="sheetBtn" aria-expanded="false" aria-controls="sheet">選單</button></div>
+
+<div class="sheet" id="sheet" aria-hidden="true">
+  <div class="sheet__panel" role="dialog" aria-label="網站選單">
+    <nav>
+      <a href="#broth">金湯</a>
+      <a href="#ritual">一鍋湯的順序</a>
+      <a href="#sets">海陸套餐</a>
+      <a href="#carte">單人套餐・單點</a>
+      <a href="#press">食記報導</a>
+      <a href="#reserve">地址・交通</a>
+    </nav>
+    <button type="button" class="sheet__close" id="sheetClose">關閉</button>
+  </div>
+</div>
 
 <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="完整菜單" hidden>
   <button class="lb__close" id="lbClose" aria-label="關閉">關閉</button>
